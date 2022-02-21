@@ -1,5 +1,7 @@
 import 'package:chat/config/palette.dart';
+import 'package:chat/screens/chat_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginSignupScreen extends StatefulWidget {
   const LoginSignupScreen({Key? key}) : super(key: key);
@@ -9,6 +11,8 @@ class LoginSignupScreen extends StatefulWidget {
 }
 
 class _LoginSignupScreenState extends State<LoginSignupScreen> {
+  final _authentication = FirebaseAuth.instance; //파이어베이스 인증을 위한 인스턴스 생성
+  // 위의 인스턴스를 생성하면 사용자 등록, 로그인에 필요한 파이어베이스 메서드들을 사용할 수 있다
   bool isSignupScreen = true; // 삼항 조건문을위해 필요하다
   final _formKey = GlobalKey<FormState>();
 
@@ -198,6 +202,10 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
                                   onSaved: (value) {
                                     userName = value!;
                                   },
+                                  //밸류값들이 입력될 때마다 변화를 감지하여 변수에 저장
+                                  onChanged: (value) {
+                                    userName = value;
+                                  },
                                   decoration: InputDecoration(
                                       prefixIcon: Icon(
                                         Icons.account_circle,
@@ -228,6 +236,8 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
                                   height: 8,
                                 ),
                                 TextFormField(
+                                  keyboardType: TextInputType.emailAddress,
+                                  //이메일에 적합한 키보드 불러오기
                                   key: ValueKey(2),
                                   validator: (value) {
                                     if (value!.isEmpty ||
@@ -238,6 +248,9 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
                                   },
                                   onSaved: (value) {
                                     userEmail = value!;
+                                  },
+                                  onChanged: (value) {
+                                    userEmail = value;
                                   },
                                   decoration: InputDecoration(
                                       prefixIcon: Icon(
@@ -269,6 +282,8 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
                                   height: 8,
                                 ),
                                 TextFormField(
+                                  obscureText: true,
+                                  //비밀번호 노출 방지
                                   key: ValueKey(3),
                                   validator: (value) {
                                     if (value!.isEmpty || value.length < 6) {
@@ -278,6 +293,9 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
                                   },
                                   onSaved: (value) {
                                     userPassword = value!;
+                                  },
+                                  onChanged: (value) {
+                                    userPassword = value;
                                   },
                                   decoration: InputDecoration(
                                       prefixIcon: Icon(
@@ -328,6 +346,9 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
                                   onSaved: (value) {
                                     userEmail = value!;
                                   },
+                                  onChanged: (value) {
+                                    userEmail = value;
+                                  },
                                   decoration: InputDecoration(
                                       prefixIcon: Icon(
                                         Icons.mail,
@@ -367,6 +388,9 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
                                   },
                                   onSaved: (value) {
                                     userPassword = value!;
+                                  },
+                                  onChanged: (value) {
+                                    userPassword = value;
                                   },
                                   decoration: InputDecoration(
                                       prefixIcon: Icon(
@@ -419,8 +443,54 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(50)),
                   child: GestureDetector(
-                    onTap: () {
-                      _tryValidation();
+                    onTap: () async {
+                      if (isSignupScreen) {
+                        _tryValidation();
+                        try {
+                          //아마도 이부분이 파이어베이스에 등록해주는 부분
+                          final newUser = await _authentication
+                              .createUserWithEmailAndPassword(
+                            email: userEmail,
+                            password: userPassword,
+                          );
+                          //아래 user 은 파이어베이스 auth 에서 사용하는 크레덴셜메서드의 한 속성이다
+                          //널이 아니라는 경우는 사용자의 입력내용이 다 제대로 입력되어 있음을 의미
+                          //채팅 스크린으로 페이지를 이동시켜야한다
+                          if (newUser.user != null) {
+                            Navigator.push(context,
+                                MaterialPageRoute(builder: (context) {
+                              return ChatScreen();
+                            }));
+                          }
+                        } catch (e) {
+                          print(e);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content:
+                                  Text('Please check your email and password'),
+                              backgroundColor: Colors.blue,
+                            ),
+                          );
+                        }
+                      }
+                      if (!isSignupScreen) {
+                        _tryValidation();
+                        try {
+                          final newUser =
+                          await _authentication.signInWithEmailAndPassword(
+                            email: userEmail,
+                            password: userPassword,
+                          );
+                          if (newUser.user != null) {
+                            Navigator.push(context,
+                                MaterialPageRoute(builder: (context) {
+                                  return ChatScreen();
+                                }));
+                          }
+                        }catch(e){
+                          print(e);
+                        }
+                      }
                     },
                     child: Container(
                       decoration: BoxDecoration(

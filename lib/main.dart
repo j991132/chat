@@ -1,7 +1,16 @@
 import 'package:chat/screens/main_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() => runApp(MyApp());
+
+void main() async{
+  //파이어베이스를 사용하려면 런앱 실행전에 항상 아래 두 줄을 먼저 실행해줘야 한다
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
+  runApp(MyApp());
+}
+
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
