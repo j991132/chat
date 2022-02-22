@@ -3,6 +3,7 @@ import 'package:chat/screens/chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginSignupScreen extends StatefulWidget {
   const LoginSignupScreen({Key? key}) : super(key: key);
@@ -454,20 +455,27 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
                         if (isSignupScreen) {
                           _tryValidation();
                           try {
-                            //아마도 이부분이 파이어베이스에 등록해주는 부분
+                            //아마도 이부분이 파이어베이스 인증부분에 등록해주는 부분
                             final newUser = await _authentication
                                 .createUserWithEmailAndPassword(
                               email: userEmail,
                               password: userPassword,
                             );
+                           await FirebaseFirestore.instance.collection('user').doc(newUser.user!.uid)
+                            .set({
+                              'userName' : userName,
+                              'email' : userEmail
+                            });
+                            
                             //아래 user 은 파이어베이스 auth 에서 사용하는 크레덴셜메서드의 한 속성이다
                             //널이 아니라는 경우는 사용자의 입력내용이 다 제대로 입력되어 있음을 의미
                             //채팅 스크린으로 페이지를 이동시켜야한다
                             if (newUser.user != null) {
-                              Navigator.push(context,
-                                  MaterialPageRoute(builder: (context) {
-                                return ChatScreen();
-                              }));
+                              // 원래 아래 명령어로 스크린이동을 해야하지만 메인.dart 에서 스트림으로 인증상태를 체크해서 스크린이동을 하기 때문에 중보된다.
+                              // Navigator.push(context,
+                              //     MaterialPageRoute(builder: (context) {
+                              //   return ChatScreen();
+                              // }));
                               setState(() {    // 프로그레스 인디케이터 중지 점
                                 showSpinner = false;
                               });
